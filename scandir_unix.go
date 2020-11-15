@@ -76,7 +76,7 @@ func NewScannerWithScratchBuffer(osDirname string, scratchBuffer []byte) (*Scann
 // Dirent returns the current directory entry while scanning a directory.
 func (s *Scanner) Dirent() (*Dirent, error) {
 	if s.de == nil {
-		s.de = &Dirent{name: s.childName, path: s.osDirname}
+		s.de = &Dirent{name: s.childName, path: s.osDirname, size: -1, mtime: -1}
 		s.de.modeType, s.statErr = modeTypeFromDirent(&s.sde, s.osDirname, s.childName)
 	}
 	return s.de, s.statErr

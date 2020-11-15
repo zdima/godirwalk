@@ -242,6 +242,8 @@ func Walk(pathname string, options *Options) error {
 		name:     filepath.Base(pathname),
 		path:     filepath.Dir(pathname),
 		modeType: mode & os.ModeType,
+		size:     fi.Size(),
+		mtime:    fi.ModTime().Unix(),
 	}
 
 	if len(options.ScratchBuffer) < MinimumScratchBufferSize {

@@ -11,6 +11,8 @@ type Dirent struct {
 	name     string      // base name of the file system entry.
 	path     string      // path name of the file system entry.
 	modeType os.FileMode // modeType is the type of file system entry.
+	size     int64
+	mtime    int64
 }
 
 // NewDirent returns a newly initialized Dirent structure, or an error.  This
@@ -28,6 +30,8 @@ func NewDirent(osPathname string) (*Dirent, error) {
 		name:     filepath.Base(osPathname),
 		path:     filepath.Dir(osPathname),
 		modeType: modeType,
+		size:     -1,
+		mtime:    -1,
 	}, nil
 }
 
@@ -82,11 +86,55 @@ func (de Dirent) ModeType() os.FileMode { return de.modeType }
 // Name returns the base name of the file system entry.
 func (de Dirent) Name() string { return de.name }
 
+// Size returns the size of the file system entry.
+func (de *Dirent) Size() int64 {
+	if de.size == -1 {
+		var fi os.FileInfo
+		var err error
+
+		pathname := de.path + "/" + de.name
+		fi, err = os.Lstat(pathname)
+
+		if err != nil {
+			return -1
+		}
+		de.size = fi.Size()
+		de.mtime = fi.ModTime().Unix()
+		if de.mtime <= 0 {
+			de.mtime = 86401
+		}
+	}
+	return de.size
+}
+
+// Time returns the modification time (UNIX) of the file system entry.
+func (de *Dirent) Time() int64 {
+	if de.mtime == -1 {
+		var fi os.FileInfo
+		var err error
+
+		pathname := de.path + "/" + de.name
+		fi, err = os.Lstat(pathname)
+
+		if err != nil {
+			return -1
+		}
+		de.size = fi.Size()
+		de.mtime = fi.ModTime().Unix()
+		if de.mtime <= 0 {
+			de.mtime = 86401
+		}
+	}
+	return de.mtime
+}
+
 // reset releases memory held by entry err and name, and resets mode type to 0.
 func (de *Dirent) reset() {
 	de.name = ""
 	de.path = ""
 	de.modeType = 0
+	de.size = -1
+	de.mtime = -1
 }
 
 // Dirents represents a slice of Dirent pointers, which are sortable by base
