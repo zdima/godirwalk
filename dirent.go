@@ -3,6 +3,7 @@ package godirwalk
 import (
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // Dirent stores the name and file system mode type of discovered file system
@@ -12,7 +13,7 @@ type Dirent struct {
 	path     string      // path name of the file system entry.
 	modeType os.FileMode // modeType is the type of file system entry.
 	size     int64
-	mtime    int64
+	mtime    time.Time
 }
 
 // NewDirent returns a newly initialized Dirent structure, or an error.  This
@@ -31,7 +32,7 @@ func NewDirent(osPathname string) (*Dirent, error) {
 		path:     filepath.Dir(osPathname),
 		modeType: modeType,
 		size:     -1,
-		mtime:    -1,
+		mtime:    time.Time{},
 	}, nil
 }
 
@@ -99,17 +100,14 @@ func (de *Dirent) Size() int64 {
 			return -1
 		}
 		de.size = fi.Size()
-		de.mtime = fi.ModTime().Unix()
-		if de.mtime <= 0 {
-			de.mtime = 86401
-		}
+		de.mtime = fi.ModTime()
 	}
 	return de.size
 }
 
 // Time returns the modification time (UNIX) of the file system entry.
-func (de *Dirent) Time() int64 {
-	if de.mtime == -1 {
+func (de *Dirent) Time() time.Time {
+	if de.mtime.IsZero() {
 		var fi os.FileInfo
 		var err error
 
@@ -117,13 +115,10 @@ func (de *Dirent) Time() int64 {
 		fi, err = os.Lstat(pathname)
 
 		if err != nil {
-			return -1
+			return time.Time{}
 		}
 		de.size = fi.Size()
-		de.mtime = fi.ModTime().Unix()
-		if de.mtime <= 0 {
-			de.mtime = 86401
-		}
+		de.mtime = fi.ModTime()
 	}
 	return de.mtime
 }
@@ -134,7 +129,7 @@ func (de *Dirent) reset() {
 	de.path = ""
 	de.modeType = 0
 	de.size = -1
-	de.mtime = -1
+	de.mtime = time.Time{}
 }
 
 // Dirents represents a slice of Dirent pointers, which are sortable by base
